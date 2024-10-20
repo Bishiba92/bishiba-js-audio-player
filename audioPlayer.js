@@ -304,34 +304,67 @@ class AudioPlayer {
         return this.audioElements[key];
     }
 
-    // Volume controls
-    setMusicVolume(volume) {
-        this.musicVolume = volume;
-        if (this.currentMusic) {
-            this.currentMusic.volume = this.musicVolume * this.masterVolume;
-        }
-    }
+	// Volume controls with capping at 0 and 1
+	clampVolume(volume) {
+		return Math.max(0, Math.min(1, volume));
+	}
 
-    setSFXVolume(volume) {
-        this.sfxVolume = volume;
-    }
+	// Function to change volume by a relative amount
+	changeVolume(type, changeAmount) {
+		switch (type) {
+			case 'music':
+				this.setMusicVolume(this.musicVolume + changeAmount);
+				break;
+			case 'sfx':
+				this.setSFXVolume(this.sfxVolume + changeAmount);
+				break;
+			case 'bgs':
+				this.setBGSVolume(this.bgsVolume + changeAmount);
+				break;
+			case 'master':
+				this.setMasterVolume(this.masterVolume + changeAmount);
+				break;
+			default:
+				console.error('Invalid volume type');
+		}
+	}
 
-    setBGSVolume(volume) {
-        this.bgsVolume = volume;
-        this.currentBGS.forEach(bgs => {
-            bgs.volume = this.bgsVolume * this.masterVolume;
-        });
-    }
+	setMusicVolume(volume) {
+		this.musicVolume = this.clampVolume(volume); // Cap volume between 0 and 1
+		if (this.currentMusic) {
+			this.currentMusic.volume = this.musicVolume * this.masterVolume;
+		}
+	}
 
-    setMasterVolume(volume) {
-        this.masterVolume = volume;
-        if (this.currentMusic) {
-            this.currentMusic.volume = this.musicVolume * this.masterVolume;
-        }
-        if (this.currentBGS) {
-            this.currentBGS.volume = this.bgsVolume * this.masterVolume;
-        }
-    }
+	setSFXVolume(volume) {
+		this.sfxVolume = this.clampVolume(volume); // Cap volume between 0 and 1
+	}
+
+	setBGSVolume(volume) {
+		this.bgsVolume = this.clampVolume(volume); // Cap volume between 0 and 1
+		this.currentBGS.forEach(bgs => {
+			bgs.volume = this.bgsVolume * this.masterVolume;
+		});
+	}
+
+	setMasterVolume(volume) {
+		this.masterVolume = this.clampVolume(volume); // Cap volume between 0 and 1
+		if (this.currentMusic) {
+			this.currentMusic.volume = this.musicVolume * this.masterVolume;
+		}
+		if (this.currentBGS) {
+			this.currentBGS.forEach(bgs => {
+				bgs.volume = this.bgsVolume * this.masterVolume;
+			});
+		}
+	}
+
+	
+	toggleMuteAll() {
+		this.toggleMuteMusic();
+		this.toggleMuteSFX();
+		this.toggleMuteBGS();
+	}
 
     // Mute toggles
     toggleMuteMusic() {
