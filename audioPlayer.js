@@ -54,6 +54,7 @@ class AudioPlayer {
         this.musicArray = [];
         this.sfxArray = [];
         this.bgsArray = [];
+		  this.musicIndex = 0;  // For handling previous/next music
 
         this.currentMusic = null;
         this.currentBGS = [];
@@ -80,14 +81,21 @@ class AudioPlayer {
         this._preloadAudio(array, 'bgs');
     }
 
+// Preload functions with updated path for subfolders
     _preloadAudio(array, type) {
+        const folderMap = {
+            'music': 'audio/bgm/',
+            'sfx': 'audio/sfx/',
+            'bgs': 'audio/bgs/'
+        };
+        
         array.forEach(name => {
             const audio = new Audio();
-            audio.src = `${name}.ogg`;
+            audio.src = `${folderMap[type]}${name}.ogg`;
             audio.onerror = () => {
-                audio.src = `${name}.mp3`; // fallback to mp3 if ogg fails
+                audio.src = `${folderMap[type]}${name}.mp3`; // fallback to mp3 if ogg fails
                 audio.onerror = () => {
-                    audio.src = `${name}.wav`; // fallback to wav if mp3 fails
+                    audio.src = `${folderMap[type]}${name}.wav`; // fallback to wav if mp3 fails
                     audio.onerror = () => {
                         console.error(`Failed to load audio: ${name}`);
                     };
@@ -98,9 +106,18 @@ class AudioPlayer {
         });
     }
 
-    // Play Music with crossfade and customizable fade duration
-    playMusic(name, fadeDuration = 1000) {
+    // Function to play music with updated index handling
+    playMusic(name = null, fadeDuration = 1000) {
         if (this.muteMusic || this.isPaused) return;
+
+        if (name) {
+            this.musicIndex = this.musicArray.indexOf(name);
+        } else if (this.musicArray.length > 0) {
+            name = this.musicArray[this.musicIndex];
+        } else {
+            console.error("No music available to play.");
+            return;
+        }
 
         const newMusic = this._getAudio('music', name);
         newMusic.loop = true;
@@ -114,6 +131,33 @@ class AudioPlayer {
         }
 
         this.currentMusic = newMusic;
+    }
+	    // Function to check if music is playing
+    isMusicPlaying() {
+        return this.currentMusic && !this.currentMusic.paused;
+    }
+
+    // Function to check if music is producing sound
+    isMusicMakingSound() {
+        if (this.currentMusic) {
+            return this.currentMusic.volume > 0 && !this.currentMusic.paused && this.currentMusic.currentTime > 0;
+        }
+        return false;
+    }
+	// Play previous track
+    previousMusic() {
+        if (this.musicArray.length > 0) {
+            this.musicIndex = (this.musicIndex - 1 + this.musicArray.length) % this.musicArray.length;
+            this.playMusic();
+        }
+    }
+
+    // Play next track
+    nextMusic() {
+        if (this.musicArray.length > 0) {
+            this.musicIndex = (this.musicIndex + 1) % this.musicArray.length;
+            this.playMusic();
+        }
     }
 
     // Crossfade from old audio to new audio
@@ -233,16 +277,22 @@ class AudioPlayer {
         this.currentBGS = [];
     }
 
-    // Internal function to get or preload audio
+    // Internal function to get or preload audio from the correct subfolder
     _getAudio(type, name) {
+        const folderMap = {
+            'music': 'audio/bgm/',
+            'sfx': 'audio/sfx/',
+            'bgs': 'audio/bgs/'
+        };
+
         const key = `${type}_${name}`;
         if (!this.audioElements[key]) {
             const audio = new Audio();
-            audio.src = `${name}.ogg`;
+            audio.src = `${folderMap[type]}${name}.ogg`;
             audio.onerror = () => {
-                audio.src = `${name}.mp3`; // fallback to mp3
+                audio.src = `${folderMap[type]}${name}.mp3`; // fallback to mp3
                 audio.onerror = () => {
-                    audio.src = `${name}.wav`; // fallback to wav
+                    audio.src = `${folderMap[type]}${name}.wav`; // fallback to wav
                     audio.onerror = () => {
                         console.error(`Failed to load audio: ${name}`);
                     };
