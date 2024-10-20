@@ -382,10 +382,5 @@ class AudioPlayer {
 
     toggleMuteBGS() {
         this.muteBGS = !this.muteBGS;
-        if (this.muteBGS && this.currentBGS) {
-            this.currentBGS.pause();
-        } else if (!this.muteBGS && this.currentBGS) {
-            this.currentBGS.play();
-        }
     }
 }
